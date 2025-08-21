@@ -12,6 +12,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     priority: 'MEDIUM'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
   
   const { addTask } = useProject()
 
@@ -28,16 +29,24 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     if (!formData.title.trim()) return
 
     setIsSubmitting(true)
+    setError('')
+    
     try {
-      addTask({
-        ...formData,
-        projectId,
+      // Convert form data to API format
+      const taskData = {
         title: formData.title.trim(),
-        description: formData.description.trim(),
-        assignee: formData.assignee.trim()
-      })
+        description: formData.description.trim() || null,
+        status: formData.status,
+        priority: formData.priority,
+        assignee: formData.assignee.trim() || null,
+        due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        project_id: projectId
+      }
+
+      await addTask(taskData)
       onClose()
     } catch (error) {
+      setError(error.message || 'Failed to create task. Please try again.')
       console.error('Error creating task:', error)
     } finally {
       setIsSubmitting(false)
@@ -63,6 +72,12 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

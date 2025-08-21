@@ -6,6 +6,11 @@
   body {
     @apply bg-gray-50 text-gray-900;
   }
+  
+  /* Ensure full width usage */
+  #root {
+    @apply w-full;
+  }
 }
 
 @layer components {
@@ -39,5 +44,37 @@
   
   .dropdown {
     @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white;
+  }
+  
+  /* Full width container */
+  .full-width-container {
+    @apply w-full max-w-none;
+  }
+  
+  /* Responsive grid that fills available space */
+  .kanban-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 lg:gap-6 w-full;
+  }
+  
+  .dashboard-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6 w-full;
+  }
+  
+  /* Ensure grid items stretch to fill available space */
+  .kanban-grid > * {
+    @apply w-full;
+  }
+  
+  .dashboard-grid > * {
+    @apply w-full;
+  }
+  
+  /* Full width utilities */
+  .w-full {
+    width: 100%;
+  }
+  
+  .max-w-none {
+    max-width: none;
   }
 } 

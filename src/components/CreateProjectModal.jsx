@@ -6,6 +6,7 @@ const CreateProjectModal = ({ onClose }) => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
   
   const { addProject } = useProject()
 
@@ -14,13 +15,16 @@ const CreateProjectModal = ({ onClose }) => {
     if (!name.trim()) return
 
     setIsSubmitting(true)
+    setError('')
+    
     try {
-      addProject({
+      await addProject({
         name: name.trim(),
         description: description.trim()
       })
       onClose()
     } catch (error) {
+      setError(error.message || 'Failed to create project. Please try again.')
       console.error('Error creating project:', error)
     } finally {
       setIsSubmitting(false)
@@ -46,6 +50,12 @@ const CreateProjectModal = ({ onClose }) => {
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

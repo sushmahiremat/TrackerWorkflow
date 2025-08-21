@@ -23,6 +23,16 @@ const TaskCard = ({ task, onDragStart, onClick }) => {
     return null
   }
 
+  const formatDueDate = (dueDate) => {
+    if (!dueDate) return 'No due date'
+    try {
+      return format(new Date(dueDate), 'MMM dd')
+    } catch (error) {
+      console.warn('Invalid due date:', dueDate)
+      return 'Invalid date'
+    }
+  }
+
   return (
     <div
       draggable
@@ -38,7 +48,7 @@ const TaskCard = ({ task, onDragStart, onClick }) => {
       </div>
       
       <p className="text-gray-600 text-xs mb-3 line-clamp-2">
-        {task.description}
+        {task.description || 'No description'}
       </p>
       
       <div className="space-y-2">
@@ -48,13 +58,13 @@ const TaskCard = ({ task, onDragStart, onClick }) => {
           </span>
           <div className="flex items-center text-xs text-gray-500">
             <Calendar className="h-3 w-3 mr-1" />
-            {format(new Date(task.dueDate), 'MMM dd')}
+            {formatDueDate(task.due_date)}
           </div>
         </div>
         
         <div className="flex items-center text-xs text-gray-500">
           <User className="h-3 w-3 mr-1" />
-          {task.assignee}
+          {task.assignee || 'Unassigned'}
         </div>
       </div>
     </div>
