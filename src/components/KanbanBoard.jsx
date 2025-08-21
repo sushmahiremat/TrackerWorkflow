@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext.jsx'
 import TaskCard from './TaskCard.jsx'
@@ -15,13 +15,24 @@ import {
 const KanbanBoard = () => {
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { getProjectById, getTasksByStatus, moveTask } = useProject()
+  const { getProjectById, getTasksByStatus, moveTask, loadTasksByProject, loading, error, tasks } = useProject()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [tasksLoaded, setTasksLoaded] = useState(false)
 
   const project = getProjectById(projectId)
+  
+  // Load tasks when component mounts or projectId changes
+  useEffect(() => {
+    console.log('KanbanBoard useEffect triggered:', { projectId, tasksLoaded, loading })
+    if (projectId && !tasksLoaded && !loading) {
+      console.log('Loading tasks for project:', projectId)
+      setTasksLoaded(true)
+      loadTasksByProject(parseInt(projectId))
+    }
+  }, [projectId, tasksLoaded, loading, loadTasksByProject])
   
   if (!project) {
     return (
@@ -71,8 +82,8 @@ const KanbanBoard = () => {
     if (searchTerm) {
       tasks = tasks.filter(task =>
         task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.assignee.toLowerCase().includes(searchTerm.toLowerCase())
+        (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (task.assignee && task.assignee.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     }
     
@@ -87,7 +98,7 @@ const KanbanBoard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <button
@@ -99,12 +110,13 @@ const KanbanBoard = () => {
               </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">{project.name}</h1>
-                <p className="text-sm text-gray-600">{project.description}</p>
+                <p className="text-sm text-gray-600">{project.description || 'No description'}</p>
               </div>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
               className="btn-primary flex items-center space-x-2"
+              disabled={loading}
             >
               <Plus className="h-4 w-4" />
               <span>Add Task</span>
@@ -113,8 +125,17 @@ const KanbanBoard = () => {
         </div>
       </header>
 
+      {/* Error Display */}
+      {error && (
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="relative">
@@ -144,43 +165,57 @@ const KanbanBoard = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center mb-4 animate-pulse">
+              <div className="h-6 w-6 bg-gray-400 rounded"></div>
+            </div>
+            <p className="text-gray-600">Loading tasks...</p>
+          </div>
+        </div>
+      )}
+
       {/* Kanban Board */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {columns.map((column) => (
-            <div
-              key={column.id}
-              className="bg-white rounded-lg shadow-sm border"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, column.id)}
-            >
-              <div className={`p-4 ${column.color} rounded-t-lg`}>
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold text-gray-900">{column.title}</h3>
-                  <span className="text-sm text-gray-600">
-                    {filteredTasks(column.id).length}
-                  </span>
+      {!loading && (
+        <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
+          <div className="kanban-grid">
+            {columns.map((column) => (
+              <div
+                key={column.id}
+                className="bg-white rounded-lg shadow-sm border min-w-0 flex flex-col"
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, column.id)}
+              >
+                <div className={`p-4 ${column.color} rounded-t-lg flex-shrink-0`}>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-gray-900 truncate">{column.title}</h3>
+                    <span className="text-sm text-gray-600 flex-shrink-0">
+                      {filteredTasks(column.id).length}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3 min-h-[400px] flex-1 overflow-y-auto">
+                  {filteredTasks(column.id).map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onDragStart={handleDragStart}
+                      onClick={() => handleTaskClick(task)}
+                    />
+                  ))}
+                  {filteredTasks(column.id).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-sm">No tasks</p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="p-4 space-y-3 min-h-[400px]">
-                {filteredTasks(column.id).map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onDragStart={handleDragStart}
-                    onClick={() => handleTaskClick(task)}
-                  />
-                ))}
-                {filteredTasks(column.id).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <p className="text-sm">No tasks</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modals */}
       {showCreateModal && (

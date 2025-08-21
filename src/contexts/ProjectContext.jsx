@@ -1,80 +1,20 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
+import { projectAPI, taskAPI } from '../services/api.js'
 
-// Initial state with dummy data
+// Initial state
 const initialState = {
-  projects: [
-    {
-      id: 1,
-      name: 'Website Redesign',
-      description: 'Redesign the company website with modern UI/UX',
-      createdAt: '2024-01-15',
-      tasksCount: 8
-    },
-    {
-      id: 2,
-      name: 'Mobile App Development',
-      description: 'Develop a cross-platform mobile application',
-      createdAt: '2024-01-20',
-      tasksCount: 12
-    },
-    {
-      id: 3,
-      name: 'Database Migration',
-      description: 'Migrate legacy database to new cloud infrastructure',
-      createdAt: '2024-01-25',
-      tasksCount: 5
-    }
-  ],
-  tasks: [
-    {
-      id: 1,
-      projectId: 1,
-      title: 'Design Homepage Layout',
-      description: 'Create wireframes and mockups for the homepage',
-      status: 'IN_PROGRESS',
-      priority: 'HIGH',
-      assignee: 'John Doe',
-      dueDate: '2024-02-15',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: 2,
-      projectId: 1,
-      title: 'Implement Navigation Menu',
-      description: 'Build responsive navigation with mobile support',
-      status: 'TODO',
-      priority: 'MEDIUM',
-      assignee: 'Jane Smith',
-      dueDate: '2024-02-20',
-      createdAt: '2024-01-16'
-    },
-    {
-      id: 3,
-      projectId: 2,
-      title: 'Setup React Native Project',
-      description: 'Initialize React Native project with TypeScript',
-      status: 'DONE',
-      priority: 'HIGH',
-      assignee: 'Mike Johnson',
-      dueDate: '2024-01-30',
-      createdAt: '2024-01-20'
-    },
-    {
-      id: 4,
-      projectId: 2,
-      title: 'Design App Icons',
-      description: 'Create app icons for different platforms',
-      status: 'REVIEW',
-      priority: 'LOW',
-      assignee: 'Sarah Wilson',
-      dueDate: '2024-02-10',
-      createdAt: '2024-01-22'
-    }
-  ]
+  projects: [],
+  tasks: [],
+  loading: false,
+  error: null
 }
 
 // Action types
 const PROJECT_ACTIONS = {
+  SET_LOADING: 'SET_LOADING',
+  SET_ERROR: 'SET_ERROR',
+  SET_PROJECTS: 'SET_PROJECTS',
+  SET_TASKS: 'SET_TASKS',
   ADD_PROJECT: 'ADD_PROJECT',
   UPDATE_PROJECT: 'UPDATE_PROJECT',
   DELETE_PROJECT: 'DELETE_PROJECT',
@@ -87,6 +27,30 @@ const PROJECT_ACTIONS = {
 // Reducer function
 const projectReducer = (state, action) => {
   switch (action.type) {
+    case PROJECT_ACTIONS.SET_LOADING:
+      return {
+        ...state,
+        loading: action.payload
+      }
+    
+    case PROJECT_ACTIONS.SET_ERROR:
+      return {
+        ...state,
+        error: action.payload
+      }
+    
+    case PROJECT_ACTIONS.SET_PROJECTS:
+      return {
+        ...state,
+        projects: action.payload
+      }
+    
+    case PROJECT_ACTIONS.SET_TASKS:
+      return {
+        ...state,
+        tasks: action.payload
+      }
+    
     case PROJECT_ACTIONS.ADD_PROJECT:
       return {
         ...state,
@@ -105,7 +69,7 @@ const projectReducer = (state, action) => {
       return {
         ...state,
         projects: state.projects.filter(project => project.id !== action.payload),
-        tasks: state.tasks.filter(task => task.projectId !== action.payload)
+        tasks: state.tasks.filter(task => task.project_id !== action.payload)
       }
     
     case PROJECT_ACTIONS.ADD_TASK:
@@ -150,69 +114,180 @@ const ProjectContext = createContext()
 export const ProjectProvider = ({ children }) => {
   const [state, dispatch] = useReducer(projectReducer, initialState)
 
+  // Load projects from API
+  const loadProjects = useCallback(async () => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const projects = await projectAPI.getProjects()
+      dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: projects })
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error loading projects:', error)
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
+
+  // Load tasks for a specific project
+  const loadTasksByProject = useCallback(async (projectId) => {
+    console.log('loadTasksByProject called with projectId:', projectId)
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const tasks = await taskAPI.getTasksByProject(projectId)
+      console.log('Tasks loaded successfully:', tasks.length)
+      dispatch({ type: PROJECT_ACTIONS.SET_TASKS, payload: tasks })
+    } catch (error) {
+      console.error('Error loading tasks:', error)
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
+
+  // Load projects on component mount
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
+
   // Actions
-  const addProject = (project) => {
-    const newProject = {
-      ...project,
-      id: Date.now(),
-      createdAt: new Date().toISOString().split('T')[0],
-      tasksCount: 0
+  const addProject = useCallback(async (project) => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const newProject = await projectAPI.createProject(project)
+      dispatch({ type: PROJECT_ACTIONS.ADD_PROJECT, payload: newProject })
+      return newProject
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error creating project:', error)
+      throw error
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
     }
-    dispatch({ type: PROJECT_ACTIONS.ADD_PROJECT, payload: newProject })
-  }
+  }, [])
 
-  const updateProject = (project) => {
-    dispatch({ type: PROJECT_ACTIONS.UPDATE_PROJECT, payload: project })
-  }
-
-  const deleteProject = (projectId) => {
-    dispatch({ type: PROJECT_ACTIONS.DELETE_PROJECT, payload: projectId })
-  }
-
-  const addTask = (task) => {
-    const newTask = {
-      ...task,
-      id: Date.now(),
-      createdAt: new Date().toISOString().split('T')[0]
+  const updateProject = useCallback(async (projectId, projectData) => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const updatedProject = await projectAPI.updateProject(projectId, projectData)
+      dispatch({ type: PROJECT_ACTIONS.UPDATE_PROJECT, payload: updatedProject })
+      return updatedProject
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error updating project:', error)
+      throw error
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
     }
-    dispatch({ type: PROJECT_ACTIONS.ADD_TASK, payload: newTask })
-  }
+  }, [])
 
-  const updateTask = (task) => {
-    dispatch({ type: PROJECT_ACTIONS.UPDATE_TASK, payload: task })
-  }
+  const deleteProject = useCallback(async (projectId) => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      await projectAPI.deleteProject(projectId)
+      dispatch({ type: PROJECT_ACTIONS.DELETE_PROJECT, payload: projectId })
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error deleting project:', error)
+      throw error
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
 
-  const deleteTask = (taskId) => {
-    dispatch({ type: PROJECT_ACTIONS.DELETE_TASK, payload: taskId })
-  }
+  const addTask = useCallback(async (task) => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const newTask = await taskAPI.createTask(task)
+      dispatch({ type: PROJECT_ACTIONS.ADD_TASK, payload: newTask })
+      return newTask
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error creating task:', error)
+      throw error
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
 
-  const moveTask = (taskId, newStatus) => {
-    dispatch({ 
-      type: PROJECT_ACTIONS.MOVE_TASK, 
-      payload: { taskId, newStatus } 
-    })
-  }
+  const updateTask = useCallback(async (taskId, taskData) => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const updatedTask = await taskAPI.updateTask(taskId, taskData)
+      dispatch({ type: PROJECT_ACTIONS.UPDATE_TASK, payload: updatedTask })
+      return updatedTask
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error updating task:', error)
+      throw error
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
+
+  const deleteTask = useCallback(async (taskId) => {
+    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      await taskAPI.deleteTask(taskId)
+      dispatch({ type: PROJECT_ACTIONS.DELETE_TASK, payload: taskId })
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      console.error('Error deleting task:', error)
+      throw error
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
+
+  const moveTask = useCallback(async (taskId, newStatus) => {
+    try {
+      const task = state.tasks.find(t => t.id === taskId)
+      if (task) {
+        await updateTask(taskId, { ...task, status: newStatus })
+      }
+    } catch (error) {
+      console.error('Error moving task:', error)
+      throw error
+    }
+  }, [state.tasks, updateTask])
 
   // Selectors
-  const getProjects = () => state.projects
+  const getProjects = useCallback(() => state.projects, [state.projects])
 
-  const getProjectById = (projectId) => {
+  const getProjectById = useCallback((projectId) => {
     return state.projects.find(project => project.id === parseInt(projectId))
-  }
+  }, [state.projects])
 
-  const getTasksByProject = (projectId) => {
-    return state.tasks.filter(task => task.projectId === parseInt(projectId))
-  }
+  const getTasksByProject = useCallback((projectId) => {
+    return state.tasks.filter(task => task.project_id === parseInt(projectId))
+  }, [state.tasks])
 
-  const getTasksByStatus = (projectId, status) => {
+  const getTasksByStatus = useCallback((projectId, status) => {
     return state.tasks.filter(task => 
-      task.projectId === parseInt(projectId) && task.status === status
+      task.project_id === parseInt(projectId) && task.status === status
     )
-  }
+  }, [state.tasks])
 
   const value = {
     projects: state.projects,
     tasks: state.tasks,
+    loading: state.loading,
+    error: state.error,
     addProject,
     updateProject,
     deleteProject,
@@ -223,7 +298,9 @@ export const ProjectProvider = ({ children }) => {
     getProjects,
     getProjectById,
     getTasksByProject,
-    getTasksByStatus
+    getTasksByStatus,
+    loadProjects,
+    loadTasksByProject
   }
 
   return (

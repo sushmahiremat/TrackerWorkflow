@@ -1,189 +1,129 @@
-# Workflow Tracker
+# Workflow Tracker Frontend
 
-A modern React application built with Vite for managing projects and tasks using a Kanban board interface. This application demonstrates the use of React hooks (`useState`, `useReducer`), Context API for state management, and Tailwind CSS for styling.
+A React-based frontend for the Workflow Tracker application with support for both traditional email/password authentication and Google OAuth.
 
-## 🚀 Features
+## Setup Instructions
 
-- **Authentication System**: Login/logout functionality with demo credentials
-- **Project Management**: Create, view, and manage multiple projects
-- **Kanban Board**: Drag-and-drop task management with four status columns:
-  - TO DO
-  - IN PROGRESS
-  - REVIEW
-  - DONE
-- **Task Management**: Full CRUD operations for tasks including:
-  - Priority levels (LOW, MEDIUM, HIGH)
-  - Due dates
-  - Assignees
-  - Status tracking
-- **Search & Filter**: Search tasks by title, description, or assignee
-- **Responsive Design**: Mobile-friendly interface
-- **Modern UI**: Clean, intuitive interface with Tailwind CSS
-
-## 🛠️ Technology Stack
-
-- **React 18** - UI library
-- **Vite** - Build tool and development server
-- **React Router DOM** - Client-side routing
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Icon library
-- **Date-fns** - Date manipulation utilities
-- **Vitest** - Testing framework
-- **React Testing Library** - Component testing utilities
-
-## 📁 Project Structure
-
-```
-workflow-tracker/
-├── src/
-│   ├── components/
-│   │   ├── Login.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── KanbanBoard.jsx
-│   │   ├── TaskCard.jsx
-│   │   ├── CreateProjectModal.jsx
-│   │   ├── CreateTaskModal.jsx
-│   │   └── TaskDetailsModal.jsx
-│   ├── contexts/
-│   │   ├── AuthContext.jsx
-│   │   └── ProjectContext.jsx
-│   ├── test/
-│   │   └── setup.jsx
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── public/
-├── index.html
-├── package.json
-├── vite.config.jsx
-├── tailwind.config.js
-├── postcss.config.js
-└── README.md
-```
-
-## 🎯 State Management
-
-The application uses React's Context API with `useReducer` for state management:
-
-### AuthContext
-
-- Manages authentication state
-- Handles login/logout operations
-- Provides user information
-
-### ProjectContext
-
-- Manages projects and tasks data
-- Handles CRUD operations for projects and tasks
-- Provides selectors for filtering and querying data
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js (version 16 or higher)
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone <repository-url>
-   cd workflow-tracker
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-
-   ```bash
-   npm run dev
-   ```
-
-4. **Open your browser**
-   Navigate to `http://localhost:5173`
-
-### Demo Credentials
-
-- **Email**: demo@example.com
-- **Password**: password
-
-## 📜 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run test` - Run tests
-- `npm run lint` - Run ESLint
-
-## 🧪 Testing
-
-The application includes comprehensive tests using Vitest and React Testing Library:
+### 1. Install Dependencies
 
 ```bash
-npm run test
+npm install
 ```
 
-Tests cover:
+### 2. Environment Configuration
 
-- Component rendering
-- User interactions
-- Form submissions
-- Context providers
+Create a `.env` file in the root directory with the following variables:
 
-## 🎨 Customization
+```env
+# Google OAuth Configuration
+VITE_GOOGLE_CLIENT_ID=your-google-client-id-here
 
-### Styling
+# API Configuration
+VITE_API_BASE_URL=http://localhost:8000
+```
 
-The application uses Tailwind CSS with custom configuration in `tailwind.config.js`. You can customize:
+### 3. Google OAuth Setup
 
-- Color palette
-- Typography
-- Spacing
-- Animations
+To enable Google OAuth, you need to:
 
-### Adding New Features
+1. **Go to Google Cloud Console**: https://console.cloud.google.com/
+2. **Create a new project** or select an existing one
+3. **Enable Google+ API** and **Google OAuth2 API**
+4. **Create OAuth 2.0 credentials**:
+   - Application type: Web application
+   - Authorized redirect URIs: `http://localhost:8000/auth/google/callback`
+   - Copy the Client ID to your `.env` file
 
-1. Create new components in `src/components/`
-2. Add new contexts in `src/contexts/` if needed
-3. Update routing in `App.jsx`
-4. Add tests for new functionality
+### 4. Update Google Client ID
 
-## 🔧 Key Features Implementation
+In `src/components/GoogleLogin.jsx`, replace the placeholder:
 
-### Drag and Drop
+```javascript
+// Replace this line:
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "REPLACE_WITH_YOUR_ACTUAL_GOOGLE_CLIENT_ID";
 
-Tasks can be dragged between status columns using HTML5 drag and drop API.
+// With your actual Google Client ID:
+const GOOGLE_CLIENT_ID =
+  "123456789-abcdefghijklmnop.apps.googleusercontent.com";
+```
 
-### Real-time Updates
+### 5. Start the Application
 
-State updates are handled through Context API with `useReducer` for predictable state changes.
+```bash
+npm run dev
+```
 
-### Responsive Design
+The application will be available at `http://localhost:5173`
 
-The application is fully responsive with mobile-first design using Tailwind CSS utilities.
+## Features
 
-### Search and Filter
+- **Traditional Login**: Email/password authentication
+- **Google OAuth**: Single Sign-On with Google accounts
+- **Project Management**: Create, view, edit, and delete projects
+- **Task Management**: Full CRUD operations for tasks
+- **Kanban Board**: Drag-and-drop task management
+- **Responsive Design**: Works on desktop and mobile
 
-Tasks can be searched by title, description, or assignee, and filtered by status.
+## Authentication
 
-## 🤝 Contributing
+The application supports two authentication methods:
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+1. **Traditional Login**: Users register with email/password
+2. **Google OAuth**: Users sign in with their Google account
 
-## 📝 License
+Both methods provide the same user experience once authenticated.
 
-This project is open source and available under the [MIT License](LICENSE).
+## Troubleshooting
 
-## 🆘 Support
+### Google OAuth Not Working
 
-If you encounter any issues or have questions, please open an issue in the repository.
+1. **Check Client ID**: Make sure you've replaced the placeholder with your actual Google Client ID
+2. **Verify API Setup**: Ensure Google OAuth2 API is enabled in Google Cloud Console
+3. **Check Redirect URI**: Verify the redirect URI matches exactly
+4. **Browser Console**: Check for any JavaScript errors
+
+### Backend Connection Issues
+
+1. **Verify Backend**: Make sure the FastAPI backend is running on port 8000
+2. **Check CORS**: Ensure the backend allows requests from `http://localhost:5173`
+3. **Network Tab**: Check browser DevTools for failed API requests
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── Login.jsx       # Login page with Google OAuth
+│   ├── Dashboard.jsx   # Main dashboard
+│   ├── KanbanBoard.jsx # Task management board
+│   └── ...
+├── contexts/           # React contexts
+│   ├── AuthContext.jsx # Authentication state
+│   └── ProjectContext.jsx # Project and task state
+├── services/           # API services
+│   └── api.js         # API calls
+└── ...
+```
+
+### Key Components
+
+- **GoogleLogin**: Handles Google OAuth integration
+- **UserProfile**: Displays user information in dashboard header
+- **AuthContext**: Manages authentication state
+- **ProjectContext**: Manages projects and tasks
+
+## Building for Production
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist/` directory.
+
+## License
+
+This project is part of the Workflow Tracker application.

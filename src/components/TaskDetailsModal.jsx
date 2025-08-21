@@ -11,7 +11,7 @@ const TaskDetailsModal = ({ task, onClose }) => {
     description: task.description,
     status: task.status,
     assignee: task.assignee,
-    dueDate: task.dueDate,
+    dueDate: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
     priority: task.priority
   })
   
@@ -30,13 +30,19 @@ const TaskDetailsModal = ({ task, onClose }) => {
 
     setIsSubmitting(true)
     try {
-      updateTask({
+      // Convert form data to API format
+      const taskData = {
         ...task,
-        ...formData,
         title: formData.title.trim(),
         description: formData.description.trim(),
-        assignee: formData.assignee.trim()
-      })
+        status: formData.status,
+        priority: formData.priority,
+        assignee: formData.assignee.trim(),
+        due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        project_id: task.project_id
+      }
+      
+      await updateTask(task.id, taskData)
       setIsEditing(false)
     } catch (error) {
       console.error('Error updating task:', error)
@@ -50,7 +56,7 @@ const TaskDetailsModal = ({ task, onClose }) => {
 
     setIsSubmitting(true)
     try {
-      deleteTask(task.id)
+      await deleteTask(task.id)
       onClose()
     } catch (error) {
       console.error('Error deleting task:', error)
@@ -87,6 +93,16 @@ const TaskDetailsModal = ({ task, onClose }) => {
     }
   }
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not set'
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy')
+    } catch (error) {
+      console.warn('Invalid date:', dateString)
+      return 'Invalid date'
+    }
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content max-w-2xl" onClick={(e) => e.stopPropagation()}>
@@ -98,14 +114,15 @@ const TaskDetailsModal = ({ task, onClose }) => {
                 <button
                   onClick={() => setIsEditing(true)}
                   className="btn-secondary flex items-center space-x-2"
+                  disabled={isSubmitting}
                 >
                   <Edit className="h-4 w-4" />
                   <span>Edit</span>
                 </button>
                 <button
                   onClick={handleDelete}
-                  disabled={isSubmitting}
                   className="btn-danger flex items-center space-x-2"
+                  disabled={isSubmitting}
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Delete</span>
@@ -134,6 +151,7 @@ const TaskDetailsModal = ({ task, onClose }) => {
                 value={formData.title}
                 onChange={handleChange}
                 className="input-field"
+                placeholder="Enter task title"
                 required
                 disabled={isSubmitting}
               />
@@ -148,7 +166,8 @@ const TaskDetailsModal = ({ task, onClose }) => {
                 value={formData.description}
                 onChange={handleChange}
                 className="input-field resize-none"
-                rows="4"
+                rows="3"
+                placeholder="Enter task description"
                 disabled={isSubmitting}
               />
             </div>
@@ -241,7 +260,7 @@ const TaskDetailsModal = ({ task, onClose }) => {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{task.title}</h3>
-              <p className="text-gray-600">{task.description}</p>
+              <p className="text-gray-600">{task.description || 'No description'}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -260,13 +279,13 @@ const TaskDetailsModal = ({ task, onClose }) => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <User className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-600">{task.assignee}</span>
+                <span className="text-sm text-gray-600">{task.assignee || 'Unassigned'}</span>
               </div>
               
               <div className="flex items-center space-x-3">
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <span className="text-sm text-gray-600">
-                  Due: {format(new Date(task.dueDate), 'MMM dd, yyyy')}
+                  Due: {formatDate(task.due_date)}
                 </span>
               </div>
             </div>
@@ -274,7 +293,7 @@ const TaskDetailsModal = ({ task, onClose }) => {
             <div className="pt-4 border-t border-gray-200">
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <AlertCircle className="h-4 w-4" />
-                <span>Created on {format(new Date(task.createdAt), 'MMM dd, yyyy')}</span>
+                <span>Created on {formatDate(task.created_at)}</span>
               </div>
             </div>
           </div>
