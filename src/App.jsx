@@ -3,17 +3,23 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './components/Login.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import KanbanBoard from './components/KanbanBoard.jsx'
+import Recent from './components/Recent.jsx'
+import Starred from './components/Starred.jsx'
+import Layout from './components/Layout.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { ProjectProvider } from './contexts/ProjectContext.jsx'
+import { TopNavProvider } from './contexts/TopNavContext.jsx'
 
 function App() {
   return (
     <div className="w-full min-h-screen">
       <AuthProvider>
         <ProjectProvider>
-          <Router>
-            <AppRoutes />
-          </Router>
+          <TopNavProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </TopNavProvider>
         </ProjectProvider>
       </AuthProvider>
     </div>
@@ -43,11 +49,35 @@ function AppRoutes() {
       />
       <Route 
         path="/dashboard" 
-        element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} 
+        element={isAuthenticated ? (
+          <Layout>
+            <Dashboard />
+          </Layout>
+        ) : <Navigate to="/login" />} 
       />
       <Route 
         path="/project/:projectId" 
-        element={isAuthenticated ? <KanbanBoard /> : <Navigate to="/login" />} 
+        element={isAuthenticated ? (
+          <Layout>
+            <KanbanBoard />
+          </Layout>
+        ) : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/recent" 
+        element={isAuthenticated ? (
+          <Layout>
+            <Recent />
+          </Layout>
+        ) : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/starred" 
+        element={isAuthenticated ? (
+          <Layout>
+            <Starred />
+          </Layout>
+        ) : <Navigate to="/login" />} 
       />
       <Route 
         path="/" 

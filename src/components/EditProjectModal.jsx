@@ -1,14 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useProject } from '../contexts/ProjectContext.jsx'
 import { X } from 'lucide-react'
 
-const CreateProjectModal = ({ onClose }) => {
+const EditProjectModal = ({ project, onClose, onUpdate }) => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   
-  const { addProject } = useProject()
+  const { updateProject } = useProject()
+
+  // Initialize form with project data
+  useEffect(() => {
+    if (project) {
+      setName(project.name || '')
+      setDescription(project.description || '')
+    }
+  }, [project])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,14 +26,18 @@ const CreateProjectModal = ({ onClose }) => {
     setError('')
     
     try {
-      await addProject({
+      const updatedProject = await updateProject(project.id, {
         name: name.trim(),
         description: description.trim()
       })
+      
+      if (onUpdate) {
+        onUpdate(updatedProject)
+      }
       onClose()
     } catch (error) {
-      setError(error.message || 'Failed to create project. Please try again.')
-      console.error('Error creating project:', error)
+      setError(error.message || 'Failed to update project. Please try again.')
+      console.error('Error updating project:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -37,11 +49,13 @@ const CreateProjectModal = ({ onClose }) => {
     }
   }
 
+  if (!project) return null
+
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content-medium" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Create New Project</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Edit Project</h2>
           <button
             onClick={handleClose}
             disabled={isSubmitting}
@@ -105,7 +119,7 @@ const CreateProjectModal = ({ onClose }) => {
               disabled={!name.trim() || isSubmitting}
               className="btn-primary px-6 py-2"
             >
-              {isSubmitting ? 'Creating...' : 'Create Project'}
+              {isSubmitting ? 'Updating...' : 'Update Project'}
             </button>
           </div>
         </form>
@@ -114,4 +128,4 @@ const CreateProjectModal = ({ onClose }) => {
   )
 }
 
-export default CreateProjectModal 
+export default EditProjectModal

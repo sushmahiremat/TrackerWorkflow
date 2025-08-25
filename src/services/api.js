@@ -145,6 +145,16 @@ export const taskAPI = {
   }
 }
 
+// AI API functions
+export const aiAPI = {
+  summarizeTask: async (description) => {
+    return await apiCall('/ai/summarize-task', {
+      method: 'POST',
+      body: JSON.stringify({ description })
+    })
+  }
+}
+
 // Token management
 export const tokenService = {
   getToken: () => localStorage.getItem('authToken'),

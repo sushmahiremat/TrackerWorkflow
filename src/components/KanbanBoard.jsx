@@ -1,28 +1,36 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext.jsx'
+import { useTopNav } from '../contexts/TopNavContext.jsx'
 import TaskCard from './TaskCard.jsx'
 import CreateTaskModal from './CreateTaskModal.jsx'
 import TaskDetailsModal from './TaskDetailsModal.jsx'
 import { 
-  ArrowLeft, 
   Plus, 
-  Filter,
   Search,
-  MoreVertical
+  CheckCircle,
+  Clock,
+  Calendar
 } from 'lucide-react'
 
 const KanbanBoard = () => {
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { getProjectById, getTasksByStatus, moveTask, loadTasksByProject, loading, error, tasks } = useProject()
+  const { taskSearchTerm, setTaskSearchTerm, setOnAddTaskClick } = useTopNav()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
-  const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [tasksLoaded, setTasksLoaded] = useState(false)
 
   const project = getProjectById(projectId)
+  
+  // Calculate task statistics
+  const totalTasks = tasks.length
+  const todoTasks = getTasksByStatus(projectId, 'TODO').length
+  const inProgressTasks = getTasksByStatus(projectId, 'IN_PROGRESS').length
+  const reviewTasks = getTasksByStatus(projectId, 'REVIEW').length
+  const completedTasks = getTasksByStatus(projectId, 'DONE').length
   
   // Load tasks when component mounts or projectId changes
   useEffect(() => {
@@ -33,6 +41,14 @@ const KanbanBoard = () => {
       loadTasksByProject(parseInt(projectId))
     }
   }, [projectId, tasksLoaded, loading, loadTasksByProject])
+
+  // Set up Add Task click handler for top navigation
+  useEffect(() => {
+    setOnAddTaskClick(() => () => setShowCreateModal(true))
+    
+    // Cleanup function
+    return () => setOnAddTaskClick(null)
+  }, [setOnAddTaskClick])
   
   if (!project) {
     return (
@@ -79,11 +95,11 @@ const KanbanBoard = () => {
   const filteredTasks = (status) => {
     let tasks = getTasksByStatus(projectId, status)
     
-    if (searchTerm) {
+    if (taskSearchTerm) {
       tasks = tasks.filter(task =>
-        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (task.assignee && task.assignee.toLowerCase().includes(searchTerm.toLowerCase()))
+        task.title.toLowerCase().includes(taskSearchTerm.toLowerCase()) ||
+        (task.description && task.description.toLowerCase().includes(taskSearchTerm.toLowerCase())) ||
+        (task.assignee && task.assignee.toLowerCase().includes(taskSearchTerm.toLowerCase()))
       )
     }
     
@@ -95,35 +111,28 @@ const KanbanBoard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
-              </button>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">{project.name}</h1>
-                <p className="text-sm text-gray-600">{project.description || 'No description'}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary flex items-center space-x-2"
-              disabled={loading}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add Task</span>
-            </button>
+    <div className="bg-gray-50 min-h-full">
+      {/* Project Header */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">{project.name}</h1>
+            <p className="text-sm text-gray-600">{project.description || 'No description'}</p>
           </div>
+          
+          {/* All Status Button moved to right end */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="ALL">All Status</option>
+            {columns.map(column => (
+              <option key={column.id} value={column.id}>{column.title}</option>
+            ))}
+          </select>
         </div>
-      </header>
+      </div>
 
       {/* Error Display */}
       {error && (
@@ -134,32 +143,56 @@ const KanbanBoard = () => {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10"
-              />
+      {/* Removed old filters section - now integrated into header */}
+
+      {/* Task Statistics */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 pb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-1.5 bg-gray-100 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-gray-600" />
+              </div>
+              <div className="ml-2">
+                <p className="text-xs font-medium text-gray-600">Total</p>
+                <p className="text-sm font-bold text-gray-900">{totalTasks}</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="dropdown"
-              >
-                <option value="ALL">All Status</option>
-                {columns.map(column => (
-                  <option key={column.id} value={column.id}>{column.title}</option>
-                ))}
-              </select>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-1.5 bg-blue-100 rounded-lg">
+                <Clock className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="ml-2">
+                <p className="text-xs font-medium text-gray-600">In Progress</p>
+                <p className="text-sm font-bold text-gray-900">{inProgressTasks}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-1.5 bg-yellow-100 rounded-lg">
+                <Clock className="h-4 w-4 text-yellow-600" />
+              </div>
+              <div className="ml-2">
+                <p className="text-xs font-medium text-gray-600">Review</p>
+                <p className="text-sm font-bold text-gray-900">{reviewTasks}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <div className="p-1.5 bg-green-100 rounded-lg">
+                <Calendar className="h-4 w-4 text-green-600" />
+              </div>
+              <div className="ml-2">
+                <p className="text-xs font-medium text-gray-600">Completed</p>
+                <p className="text-sm font-bold text-gray-900">{completedTasks}</p>
+              </div>
             </div>
           </div>
         </div>

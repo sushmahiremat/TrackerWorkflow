@@ -6,12 +6,14 @@ const initialState = {
   projects: [],
   tasks: [],
   loading: false,
+  initialLoading: true, // New state for initial projects load
   error: null
 }
 
 // Action types
 const PROJECT_ACTIONS = {
   SET_LOADING: 'SET_LOADING',
+  SET_INITIAL_LOADING: 'SET_INITIAL_LOADING', // New action for initial loading
   SET_ERROR: 'SET_ERROR',
   SET_PROJECTS: 'SET_PROJECTS',
   SET_TASKS: 'SET_TASKS',
@@ -31,6 +33,12 @@ const projectReducer = (state, action) => {
       return {
         ...state,
         loading: action.payload
+      }
+    
+    case PROJECT_ACTIONS.SET_INITIAL_LOADING:
+      return {
+        ...state,
+        initialLoading: action.payload
       }
     
     case PROJECT_ACTIONS.SET_ERROR:
@@ -116,7 +124,7 @@ export const ProjectProvider = ({ children }) => {
 
   // Load projects from API
   const loadProjects = useCallback(async () => {
-    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    dispatch({ type: PROJECT_ACTIONS.SET_INITIAL_LOADING, payload: true })
     dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
     
     try {
@@ -126,14 +134,14 @@ export const ProjectProvider = ({ children }) => {
       dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
       console.error('Error loading projects:', error)
     } finally {
-      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+      dispatch({ type: PROJECT_ACTIONS.SET_INITIAL_LOADING, payload: false })
     }
   }, [])
 
   // Load tasks for a specific project
   const loadTasksByProject = useCallback(async (projectId) => {
     console.log('loadTasksByProject called with projectId:', projectId)
-    dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true })
+    // Remove loading state changes to prevent re-renders
     dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
     
     try {
@@ -143,8 +151,17 @@ export const ProjectProvider = ({ children }) => {
     } catch (error) {
       console.error('Error loading tasks:', error)
       dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
-    } finally {
-      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false })
+    }
+  }, [])
+
+  // Get task count for a specific project (without loading into state)
+  const getTaskCountByProject = useCallback(async (projectId) => {
+    try {
+      const tasks = await taskAPI.getTasksByProject(projectId)
+      return tasks.length
+    } catch (error) {
+      console.error('Error getting task count for project:', projectId, error)
+      return 0
     }
   }, [])
 
@@ -287,6 +304,7 @@ export const ProjectProvider = ({ children }) => {
     projects: state.projects,
     tasks: state.tasks,
     loading: state.loading,
+    initialLoading: state.initialLoading, // Add initialLoading to context
     error: state.error,
     addProject,
     updateProject,
@@ -300,7 +318,8 @@ export const ProjectProvider = ({ children }) => {
     getTasksByProject,
     getTasksByStatus,
     loadProjects,
-    loadTasksByProject
+    loadTasksByProject,
+    getTaskCountByProject
   }
 
   return (

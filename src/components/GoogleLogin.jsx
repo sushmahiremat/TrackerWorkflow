@@ -33,6 +33,12 @@ const GoogleLogin = ({ onSuccess, onError }) => {
   }, [])
 
   const initializeGoogleSignIn = () => {
+    if (!GOOGLE_CLIENT_ID) {
+      console.error('❌ Google Client ID not configured')
+      if (onError) onError('Google OAuth not configured')
+      return
+    }
+    
     if (window.google && googleButtonRef.current) {
       try {
         console.log('🔐 Initializing Google Sign-In with Client ID:', GOOGLE_CLIENT_ID)
@@ -47,8 +53,8 @@ const GoogleLogin = ({ onSuccess, onError }) => {
           // Use more compatible settings to avoid Cross-Origin issues
           context: 'signin',
           prompt_parent_id: googleButtonRef.current.id,
-          // Alternative: Use redirect mode if popup has issues
-          ux_mode: 'popup' // Change to 'redirect' if popup has Cross-Origin issues
+          // Use redirect mode for production to avoid Cross-Origin issues
+          ux_mode: config.IS_PROD ? 'redirect' : 'popup'
         })
 
         // Render the Google Sign-In button

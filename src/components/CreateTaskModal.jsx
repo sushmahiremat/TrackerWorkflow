@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext.jsx'
+import AISuggestions from './AISuggestions.jsx'
 import { X } from 'lucide-react'
 
 const CreateTaskModal = ({ projectId, onClose }) => {
@@ -61,7 +62,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Create New Task</h2>
           <button
@@ -79,41 +80,65 @@ const CreateTaskModal = ({ projectId, onClose }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="task-title" className="block text-sm font-medium text-gray-700 mb-2">
-              Task Title *
-            </label>
-            <input
-              id="task-title"
-              name="title"
-              type="text"
-              value={formData.title}
-              onChange={handleChange}
-              className="input-field"
-              placeholder="Enter task title"
-              required
-              disabled={isSubmitting}
-            />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="lg:col-span-2">
+              <label htmlFor="task-title" className="block text-sm font-medium text-gray-700 mb-2">
+                Task Title *
+              </label>
+              <input
+                id="task-title"
+                name="title"
+                type="text"
+                value={formData.title}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="Enter task title"
+                required
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="lg:col-span-2">
+              <label htmlFor="task-description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                id="task-description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="input-field resize-none"
+                rows="4"
+                placeholder="Enter task description"
+                disabled={isSubmitting}
+              />
+              
+              {/* AI Suggestions */}
+              <AISuggestions
+                description={formData.description}
+                onSubtaskSelect={(subtask) => {
+                  // Check if this is a summary selection
+                  if (subtask.startsWith('[SUMMARY] ')) {
+                    // Replace the description with the summary (remove the [SUMMARY] prefix)
+                    const summary = subtask.replace('[SUMMARY] ', '')
+                    setFormData(prev => ({
+                      ...prev,
+                      description: summary
+                    }))
+                  } else {
+                    // Add subtask to existing description
+                    setFormData(prev => ({
+                      ...prev,
+                      description: prev.description + (prev.description ? '\n\n' : '') + '• ' + subtask
+                    }))
+                  }
+                }}
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="task-description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              id="task-description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="input-field resize-none"
-              rows="3"
-              placeholder="Enter task description"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label htmlFor="task-status" className="block text-sm font-medium text-gray-700 mb-2">
                 Status
@@ -150,9 +175,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
                 <option value="HIGH">HIGH</option>
               </select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="task-assignee" className="block text-sm font-medium text-gray-700 mb-2">
                 Assignee
@@ -185,24 +208,26 @@ const CreateTaskModal = ({ projectId, onClose }) => {
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!formData.title.trim() || isSubmitting}
-              className="btn-primary"
-            >
-              {isSubmitting ? 'Creating...' : 'Create Task'}
-            </button>
-          </div>
-        </form>
+          <form onSubmit={handleSubmit}>
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isSubmitting}
+                className="btn-secondary px-6 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!formData.title.trim() || isSubmitting}
+                className="btn-primary px-6 py-2"
+              >
+                {isSubmitting ? 'Creating...' : 'Create Task'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
