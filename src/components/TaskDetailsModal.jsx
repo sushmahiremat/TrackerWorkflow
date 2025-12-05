@@ -1,8 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useProject } from '../contexts/ProjectContext.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { teamAPI } from '../services/api.js'
 import { format } from 'date-fns'
-import { X, Edit, Trash2, Calendar, User, AlertCircle } from 'lucide-react'
+import { X, Edit, Trash2, Calendar, User, AlertCircle, Tag } from 'lucide-react'
 import AISuggestions from './AISuggestions.jsx'
+import TagInput from './TagInput.jsx'
+import Comments from './Comments.jsx'
+import Attachments from './Attachments.jsx'
+import MentionInput from './MentionInput.jsx'
+import TeamMemberSelector from './TeamMemberSelector.jsx'
+import ActivityFeed from './ActivityFeed.jsx'
 
 const TaskDetailsModal = ({ task, onClose }) => {
   const [isEditing, setIsEditing] = useState(false)
@@ -13,10 +21,30 @@ const TaskDetailsModal = ({ task, onClose }) => {
     status: task.status,
     assignee: task.assignee,
     dueDate: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
-    priority: task.priority
+    priority: task.priority,
+    tags: task.tags || []
   })
   
-  const { updateTask, deleteTask } = useProject()
+  const { updateTask, deleteTask, getProjectById } = useProject()
+  const { user } = useAuth()
+  const userName = user?.name || user?.email || 'User'
+  const [teamMembers, setTeamMembers] = useState([])
+  
+  // Load team members if project has a team
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      try {
+        const project = getProjectById(task.project_id)
+        if (project?.team_id) {
+          const members = await teamAPI.getTeamMembers(project.team_id)
+          setTeamMembers(members || [])
+        }
+      } catch (err) {
+        console.error('Error loading team members:', err)
+      }
+    }
+    loadTeamMembers()
+  }, [task.project_id, getProjectById])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -40,6 +68,7 @@ const TaskDetailsModal = ({ task, onClose }) => {
         priority: formData.priority,
         assignee: formData.assignee.trim(),
         due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        tags: formData.tags || [],
         project_id: task.project_id
       }
       
@@ -161,17 +190,31 @@ const TaskDetailsModal = ({ task, onClose }) => {
 
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  Description <span className="text-xs text-gray-500">(Type @ to mention team members)</span>
                 </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="input-field resize-none"
-                  rows="4"
-                  placeholder="Enter task description"
-                  disabled={isSubmitting}
-                />
+                {teamMembers.length > 0 ? (
+                  <MentionInput
+                    value={formData.description}
+                    onChange={(e) => {
+                      const value = e.target ? e.target.value : e
+                      setFormData(prev => ({ ...prev, description: value }))
+                    }}
+                    members={teamMembers}
+                    placeholder="Enter task description (Type @ to mention team members)"
+                    rows={4}
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    className="input-field resize-none"
+                    rows="4"
+                    placeholder="Enter task description"
+                    disabled={isSubmitting}
+                  />
+                )}
                 
                 {/* AI Suggestions */}
                 <AISuggestions
@@ -235,16 +278,32 @@ const TaskDetailsModal = ({ task, onClose }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Assignee
+                  Assignee <span className="text-xs text-gray-500">(User will receive notification)</span>
                 </label>
-                <input
-                  name="assignee"
-                  type="text"
-                  value={formData.assignee}
-                  onChange={handleChange}
-                  className="input-field"
-                  disabled={isSubmitting}
-                />
+                {teamMembers.length > 0 ? (
+                  <TeamMemberSelector
+                    members={teamMembers}
+                    value={formData.assignee}
+                    onChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+                    placeholder="Select team member"
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <>
+                    <input
+                      name="assignee"
+                      type="text"
+                      value={formData.assignee || ''}
+                      onChange={handleChange}
+                      className="input-field"
+                      placeholder="Enter assignee name (e.g., sushma Hiremath)"
+                      disabled={isSubmitting}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      💡 Tip: Changing assignee will send a notification to the new assignee
+                    </p>
+                  </>
+                )}
               </div>
 
               <div>
@@ -260,6 +319,15 @@ const TaskDetailsModal = ({ task, onClose }) => {
                   disabled={isSubmitting}
                 />
               </div>
+            </div>
+
+            <div className="lg:col-span-2">
+              <TagInput
+                tags={formData.tags}
+                onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+                placeholder="Add tags (e.g., frontend, bug, urgent)"
+                disabled={isSubmitting}
+              />
             </div>
 
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
@@ -313,6 +381,36 @@ const TaskDetailsModal = ({ task, onClose }) => {
                   Due: {formatDate(task.due_date)}
                 </span>
               </div>
+
+              {task.tags && task.tags.length > 0 && (
+                <div className="flex items-start space-x-3">
+                  <Tag className="h-4 w-4 text-gray-400 mt-0.5" />
+                  <div className="flex flex-wrap gap-2">
+                    {task.tags.map((tag, index) => {
+                      const tagColors = [
+                        'bg-blue-100 text-blue-800 border-blue-200',
+                        'bg-purple-100 text-purple-800 border-purple-200',
+                        'bg-pink-100 text-pink-800 border-pink-200',
+                        'bg-green-100 text-green-800 border-green-200',
+                        'bg-yellow-100 text-yellow-800 border-yellow-200',
+                        'bg-indigo-100 text-indigo-800 border-indigo-200',
+                        'bg-red-100 text-red-800 border-red-200',
+                        'bg-orange-100 text-orange-800 border-orange-200',
+                      ]
+                      const tagColor = tagColors[index % tagColors.length]
+                      return (
+                        <span
+                          key={index}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${tagColor}`}
+                        >
+                          <Tag className="h-3 w-3" />
+                          {tag}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-gray-200">
@@ -320,6 +418,18 @@ const TaskDetailsModal = ({ task, onClose }) => {
                 <AlertCircle className="h-4 w-4" />
                 <span>Created on {formatDate(task.created_at)}</span>
               </div>
+            </div>
+
+            {/* Comments and Attachments Section - Compact */}
+            <div className="pt-4 border-t border-gray-200 space-y-4">
+              <Comments taskId={task.id} userName={userName} />
+              <Attachments taskId={task.id} userName={userName} />
+            </div>
+            
+            {/* Activity Feed */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Feed</h3>
+              <ActivityFeed projectId={task.project_id} taskId={task.id} limit={20} />
             </div>
           </div>
         )}

@@ -5,6 +5,7 @@ import { useProject } from '../contexts/ProjectContext.jsx'
 import { useTopNav } from '../contexts/TopNavContext.jsx'
 import CreateProjectModal from './CreateProjectModal.jsx'
 import EditProjectModal from './EditProjectModal.jsx'
+import CreateTeamModal from './CreateTeamModal.jsx'
 
 import { 
   Plus, 
@@ -15,11 +16,13 @@ import {
   Search,
   MoreVertical,
   Edit,
-  Trash2
+  Trash2,
+  Users
 } from 'lucide-react'
 
 const Dashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [projectToEdit, setProjectToEdit] = useState(null)
@@ -153,9 +156,25 @@ const Dashboard = () => {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [])
 
+  // Debug: Log projects state
+  useEffect(() => {
+    console.log('📊 Dashboard - Projects state:', {
+      projectsCount: projects?.length || 0,
+      projects: projects,
+      initialLoading,
+      loading,
+      error
+    })
+  }, [projects, initialLoading, loading, error])
+
   return (
     <div className="bg-gray-50 min-h-full">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">Error loading projects: {error}</p>
+          </div>
+        )}
         {/* Welcome Message and Total Projects Row */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -199,7 +218,7 @@ const Dashboard = () => {
         {/* Quick Actions Section */}
         <div className="mb-8">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <button 
               onClick={() => setShowCreateModal(true)}
               className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer text-left hover:border-green-300 hover:bg-green-50"
@@ -211,6 +230,21 @@ const Dashboard = () => {
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900">Create Project</p>
                   <p className="text-xs text-gray-500">Start a new project</p>
+                </div>
+              </div>
+            </button>
+            
+            <button 
+              onClick={() => setShowCreateTeamModal(true)}
+              className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer text-left hover:border-blue-300 hover:bg-blue-50"
+            >
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900">Create Team</p>
+                  <p className="text-xs text-gray-500">Start a new team</p>
                 </div>
               </div>
             </button>
@@ -467,6 +501,19 @@ const Dashboard = () => {
           setShowCreateModal(false)
           setOpenDropdowns({}) // Close all dropdowns
         }} />
+      )}
+
+      {/* Create Team Modal */}
+      {showCreateTeamModal && (
+        <CreateTeamModal 
+          onClose={() => setShowCreateTeamModal(false)}
+          onTeamCreated={(team) => {
+            setShowCreateTeamModal(false)
+            // Optionally navigate to teams page or team workspace
+            // navigate('/teams')
+            // or navigate(`/team/${team.id}`)
+          }}
+        />
       )}
 
       {/* Edit Project Modal */}

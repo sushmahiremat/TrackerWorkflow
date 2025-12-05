@@ -1,6 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useProject } from '../contexts/ProjectContext.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { teamAPI } from '../services/api.js'
 import AISuggestions from './AISuggestions.jsx'
+import TagInput from './TagInput.jsx'
+import TeamMemberSelector from './TeamMemberSelector.jsx'
+import MentionInput from './MentionInput.jsx'
 import { X } from 'lucide-react'
 
 const CreateTaskModal = ({ projectId, onClose }) => {
@@ -10,12 +15,34 @@ const CreateTaskModal = ({ projectId, onClose }) => {
     status: 'TODO',
     assignee: '',
     dueDate: '',
-    priority: 'MEDIUM'
+    priority: 'MEDIUM',
+    tags: []
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [teamMembers, setTeamMembers] = useState([])
   
-  const { addTask } = useProject()
+  const { addTask, getProjectById } = useProject()
+  const { user } = useAuth()
+  
+  // Set default assignee to current user's name
+  const currentUserName = user?.name || user?.email || ''
+  
+  // Load team members if project has a team
+  useEffect(() => {
+    const loadTeamMembers = async () => {
+      try {
+        const project = getProjectById(projectId)
+        if (project?.team_id) {
+          const members = await teamAPI.getTeamMembers(project.team_id)
+          setTeamMembers(members || [])
+        }
+      } catch (err) {
+        console.error('Error loading team members:', err)
+      }
+    }
+    loadTeamMembers()
+  }, [projectId, getProjectById])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -41,6 +68,7 @@ const CreateTaskModal = ({ projectId, onClose }) => {
         priority: formData.priority,
         assignee: formData.assignee.trim() || null,
         due_date: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
+        tags: formData.tags || [],
         project_id: projectId
       }
 
@@ -101,18 +129,29 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
             <div className="lg:col-span-2">
               <label htmlFor="task-description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Description <span className="text-xs text-gray-500">(Type @ to mention team members)</span>
               </label>
-              <textarea
-                id="task-description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="input-field resize-none"
-                rows="4"
-                placeholder="Enter task description"
-                disabled={isSubmitting}
-              />
+              {teamMembers.length > 0 ? (
+                <MentionInput
+                  value={formData.description}
+                  onChange={handleChange}
+                  members={teamMembers}
+                  placeholder="Enter task description (Type @ to mention team members)"
+                  rows={4}
+                  disabled={isSubmitting}
+                />
+              ) : (
+                <textarea
+                  id="task-description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="input-field resize-none"
+                  rows="4"
+                  placeholder="Enter task description"
+                  disabled={isSubmitting}
+                />
+              )}
               
               {/* AI Suggestions */}
               <AISuggestions
@@ -178,18 +217,44 @@ const CreateTaskModal = ({ projectId, onClose }) => {
 
             <div>
               <label htmlFor="task-assignee" className="block text-sm font-medium text-gray-700 mb-2">
-                Assignee
+                Assignee <span className="text-xs text-gray-500">(User will receive notification)</span>
               </label>
-              <input
-                id="task-assignee"
-                name="assignee"
-                type="text"
-                value={formData.assignee}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="Enter assignee name"
-                disabled={isSubmitting}
-              />
+              {teamMembers.length > 0 ? (
+                <TeamMemberSelector
+                  members={teamMembers}
+                  value={formData.assignee}
+                  onChange={(value) => setFormData(prev => ({ ...prev, assignee: value }))}
+                  placeholder="Select team member"
+                  disabled={isSubmitting}
+                />
+              ) : (
+                <>
+                  <input
+                    id="task-assignee"
+                    name="assignee"
+                    type="text"
+                    value={formData.assignee}
+                    onChange={handleChange}
+                    className="input-field"
+                    placeholder={currentUserName ? `Enter assignee name (e.g., ${currentUserName})` : "Enter assignee name"}
+                    disabled={isSubmitting}
+                  />
+                  <div className="mt-1 flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      💡 Tip: Use the exact name as shown in the user profile
+                    </p>
+                    {currentUserName && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, assignee: currentUserName }))}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Use my name ({currentUserName})
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div>
@@ -206,6 +271,15 @@ const CreateTaskModal = ({ projectId, onClose }) => {
                 disabled={isSubmitting}
               />
             </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            <TagInput
+              tags={formData.tags}
+              onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+              placeholder="Add tags (e.g., frontend, bug, urgent)"
+              disabled={isSubmitting}
+            />
           </div>
 
           <form onSubmit={handleSubmit}>

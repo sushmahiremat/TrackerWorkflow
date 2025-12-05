@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useProject } from '../contexts/ProjectContext.jsx'
 import { useTopNav } from '../contexts/TopNavContext.jsx'
+import { useTaskNotifications } from '../hooks/useTaskNotifications.js'
 import UserProfile from './UserProfile.jsx'
+import NotificationCenter from './NotificationCenter.jsx'
 import { 
   Home,
   FolderOpen,
@@ -29,8 +31,32 @@ const Layout = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const { projects } = useProject()
+  const { projects, tasks, loadAllTasks } = useProject()
   const { taskSearchTerm, setTaskSearchTerm, onAddTaskClick, projectSearchTerm, setProjectSearchTerm, onAddProjectClick } = useTopNav()
+
+  // Load all tasks for notifications
+  useEffect(() => {
+    if (loadAllTasks) {
+      loadAllTasks()
+    }
+  }, [loadAllTasks])
+
+  // Set up task notifications
+  useTaskNotifications({
+    enabled: true,
+    checkInterval: 60000, // Check every minute
+    notifyOverdue: true,
+    notifyDueToday: true,
+    notifyDueSoon: true,
+    daysAhead: 1,
+    onTaskClick: (task) => {
+      // Navigate to the task's project when notification is clicked
+      if (task.project_id) {
+        navigate(`/project/${task.project_id}`)
+        window.focus()
+      }
+    }
+  })
 
   const sidebarItems = [
     {
@@ -60,7 +86,8 @@ const Layout = ({ children }) => {
     {
       title: 'Team',
       icon: Users,
-      action: () => console.log('Team clicked')
+      path: '/teams',
+      action: () => navigate('/teams')
     },
     {
       title: 'Analytics',
@@ -254,8 +281,9 @@ const Layout = ({ children }) => {
                </div>
              )}
 
-             {/* Right section - User Profile */}
+             {/* Right section - Notifications and User Profile */}
              <div className="flex items-center space-x-3">
+               <NotificationCenter />
                <UserProfile />
              </div>
            </div>

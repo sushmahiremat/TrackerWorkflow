@@ -1,6 +1,6 @@
 import React from 'react'
 import { format } from 'date-fns'
-import { Calendar, User, CheckCircle } from 'lucide-react'
+import { Calendar, User, CheckCircle, Tag } from 'lucide-react'
 
 const TaskCard = ({ task, onDragStart, onClick }) => {
   const getPriorityColor = (priority) => {
@@ -61,6 +61,34 @@ const TaskCard = ({ task, onDragStart, onClick }) => {
             {formatDueDate(task.due_date)}
           </div>
         </div>
+        
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {task.tags.slice(0, 2).map((tag, index) => {
+              const tagColors = [
+                'bg-blue-100 text-blue-800 border-blue-200',
+                'bg-purple-100 text-purple-800 border-purple-200',
+                'bg-pink-100 text-pink-800 border-pink-200',
+                'bg-green-100 text-green-800 border-green-200',
+              ]
+              const tagColor = tagColors[index % tagColors.length]
+              return (
+                <span
+                  key={index}
+                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium border ${tagColor}`}
+                >
+                  <Tag className="h-2.5 w-2.5" />
+                  {tag}
+                </span>
+              )
+            })}
+            {task.tags.length > 2 && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200">
+                +{task.tags.length - 2}
+              </span>
+            )}
+          </div>
+        )}
         
         <div className="flex items-center text-xs text-gray-500">
           <User className="h-3 w-3 mr-1" />

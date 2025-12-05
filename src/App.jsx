@@ -5,10 +5,13 @@ import Dashboard from './components/Dashboard.jsx'
 import KanbanBoard from './components/KanbanBoard.jsx'
 import Recent from './components/Recent.jsx'
 import Starred from './components/Starred.jsx'
+import TeamWorkspace from './components/TeamWorkspace.jsx'
+import TeamsList from './components/TeamsList.jsx'
 import Layout from './components/Layout.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
 import { ProjectProvider } from './contexts/ProjectContext.jsx'
 import { TopNavProvider } from './contexts/TopNavContext.jsx'
+import { NotificationProvider } from './contexts/NotificationContext.jsx'
 
 function App() {
   return (
@@ -16,9 +19,11 @@ function App() {
       <AuthProvider>
         <ProjectProvider>
           <TopNavProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
+            <NotificationProvider>
+              <Router>
+                <AppRoutes />
+              </Router>
+            </NotificationProvider>
           </TopNavProvider>
         </ProjectProvider>
       </AuthProvider>
@@ -76,6 +81,22 @@ function AppRoutes() {
         element={isAuthenticated ? (
           <Layout>
             <Starred />
+          </Layout>
+        ) : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/teams" 
+        element={isAuthenticated ? (
+          <Layout>
+            <TeamsList />
+          </Layout>
+        ) : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/team/:teamId" 
+        element={isAuthenticated ? (
+          <Layout>
+            <TeamWorkspace />
           </Layout>
         ) : <Navigate to="/login" />} 
       />

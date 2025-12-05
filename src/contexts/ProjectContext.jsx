@@ -128,11 +128,15 @@ export const ProjectProvider = ({ children }) => {
     dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
     
     try {
+      console.log('🔄 ProjectContext: Loading projects...')
       const projects = await projectAPI.getProjects()
-      dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: projects })
+      console.log('✅ ProjectContext: Projects loaded:', projects?.length || 0, 'projects')
+      console.log('📋 ProjectContext: Projects data:', projects)
+      dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: projects || [] })
     } catch (error) {
+      console.error('❌ ProjectContext: Error loading projects:', error)
       dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
-      console.error('Error loading projects:', error)
+      dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: [] }) // Set empty array on error
     } finally {
       dispatch({ type: PROJECT_ACTIONS.SET_INITIAL_LOADING, payload: false })
     }
@@ -151,6 +155,21 @@ export const ProjectProvider = ({ children }) => {
     } catch (error) {
       console.error('Error loading tasks:', error)
       dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+    }
+  }, [])
+
+  // Load all tasks from all projects
+  const loadAllTasks = useCallback(async () => {
+    dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: null })
+    
+    try {
+      const allTasks = await taskAPI.getTasks()
+      dispatch({ type: PROJECT_ACTIONS.SET_TASKS, payload: allTasks })
+      return allTasks
+    } catch (error) {
+      console.error('Error loading all tasks:', error)
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message })
+      return []
     }
   }, [])
 
@@ -319,6 +338,7 @@ export const ProjectProvider = ({ children }) => {
     getTasksByStatus,
     loadProjects,
     loadTasksByProject,
+    loadAllTasks,
     getTaskCountByProject
   }
 

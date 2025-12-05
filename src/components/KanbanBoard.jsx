@@ -5,6 +5,7 @@ import { useTopNav } from '../contexts/TopNavContext.jsx'
 import TaskCard from './TaskCard.jsx'
 import CreateTaskModal from './CreateTaskModal.jsx'
 import TaskDetailsModal from './TaskDetailsModal.jsx'
+import ActivityFeed from './ActivityFeed.jsx'
 import { 
   Plus, 
   Search,
@@ -96,11 +97,25 @@ const KanbanBoard = () => {
     let tasks = getTasksByStatus(projectId, status)
     
     if (taskSearchTerm) {
-      tasks = tasks.filter(task =>
-        task.title.toLowerCase().includes(taskSearchTerm.toLowerCase()) ||
-        (task.description && task.description.toLowerCase().includes(taskSearchTerm.toLowerCase())) ||
-        (task.assignee && task.assignee.toLowerCase().includes(taskSearchTerm.toLowerCase()))
-      )
+      const searchTermLower = taskSearchTerm.toLowerCase()
+      tasks = tasks.filter(task => {
+        // Search in title
+        const titleMatch = task.title.toLowerCase().includes(searchTermLower)
+        
+        // Search in description
+        const descriptionMatch = task.description && 
+          task.description.toLowerCase().includes(searchTermLower)
+        
+        // Search in assignee
+        const assigneeMatch = task.assignee && 
+          task.assignee.toLowerCase().includes(searchTermLower)
+        
+        // Search in tags
+        const tagsMatch = task.tags && Array.isArray(task.tags) && 
+          task.tags.some(tag => tag.toLowerCase().includes(searchTermLower))
+        
+        return titleMatch || descriptionMatch || assigneeMatch || tagsMatch
+      })
     }
     
     if (statusFilter !== 'ALL' && statusFilter !== status) {
@@ -263,6 +278,16 @@ const KanbanBoard = () => {
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
         />
+      )}
+
+      {/* Activity Feed Section */}
+      {!loading && (
+        <div className="w-full px-4 sm:px-6 lg:px-8 pb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Project Activity Feed</h2>
+            <ActivityFeed projectId={parseInt(projectId)} limit={30} />
+          </div>
+        </div>
       )}
     </div>
   )

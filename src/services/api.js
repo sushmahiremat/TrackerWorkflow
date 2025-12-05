@@ -32,7 +32,10 @@ export const apiCall = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       console.error('❌ API request failed:', { status: response.status, data })
-      throw new Error(data.detail || data || 'API request failed')
+      const error = new Error(data.detail || data?.message || data || 'API request failed')
+      error.data = data // Attach full error data for better error handling
+      error.status = response.status
+      throw error
     }
     
     console.log('✅ API request successful:', data)
@@ -151,6 +154,196 @@ export const aiAPI = {
     return await apiCall('/ai/summarize-task', {
       method: 'POST',
       body: JSON.stringify({ description })
+    })
+  }
+}
+
+// Comment API functions
+export const commentAPI = {
+  createComment: async (taskId, commentData) => {
+    return await apiCall(`/tasks/${taskId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify(commentData)
+    })
+  },
+
+  getComments: async (taskId) => {
+    return await apiCall(`/tasks/${taskId}/comments`)
+  },
+
+  updateComment: async (commentId, content) => {
+    return await apiCall(`/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    })
+  },
+
+  deleteComment: async (commentId) => {
+    return await apiCall(`/comments/${commentId}`, {
+      method: 'DELETE'
+    })
+  }
+}
+
+// Attachment API functions
+export const attachmentAPI = {
+  uploadAttachment: async (taskId, file, userName) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (userName) {
+      formData.append('user_name', userName)
+    }
+
+    const url = `${API_BASE_URL}/tasks/${taskId}/attachments`
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Failed to upload attachment')
+    }
+
+    return await response.json()
+  },
+
+  getAttachments: async (taskId) => {
+    return await apiCall(`/tasks/${taskId}/attachments`)
+  },
+
+  downloadAttachment: async (attachmentId) => {
+    return `${API_BASE_URL}/attachments/${attachmentId}/download`
+  },
+
+  deleteAttachment: async (attachmentId) => {
+    return await apiCall(`/attachments/${attachmentId}`, {
+      method: 'DELETE'
+    })
+  }
+}
+
+// Notification API
+export const notificationAPI = {
+  getNotifications: async (userName, skip = 0, limit = 100) => {
+    return await apiCall(`/notifications/user/${userName}?skip=${skip}&limit=${limit}`)
+  },
+  
+  getUnreadCount: async (userName) => {
+    return await apiCall(`/notifications/user/${userName}/unread/count`)
+  },
+  
+  markAsRead: async (notificationId) => {
+    return await apiCall(`/notifications/${notificationId}/read`, {
+      method: 'PUT'
+    })
+  },
+  
+  markAllAsRead: async (userName) => {
+    return await apiCall(`/notifications/user/${userName}/read-all`, {
+      method: 'PUT'
+    })
+  },
+  
+  deleteNotification: async (notificationId) => {
+    return await apiCall(`/notifications/${notificationId}`, {
+      method: 'DELETE'
+    })
+  },
+  
+  createNotification: async (notificationData) => {
+    return await apiCall('/notifications', {
+      method: 'POST',
+      body: JSON.stringify(notificationData)
+    })
+  }
+}
+
+// Team API
+export const teamAPI = {
+  createTeam: async (teamData, userName) => {
+    const url = userName ? `/teams?user_name=${encodeURIComponent(userName)}` : '/teams'
+    return await apiCall(url, {
+      method: 'POST',
+      body: JSON.stringify(teamData)
+    })
+  },
+  
+  getTeams: async (skip = 0, limit = 100) => {
+    return await apiCall(`/teams?skip=${skip}&limit=${limit}`)
+  },
+  
+  getUserTeams: async (userName) => {
+    return await apiCall(`/teams/user/${userName}`)
+  },
+  
+  getTeam: async (teamId) => {
+    return await apiCall(`/teams/${teamId}`)
+  },
+  
+  updateTeam: async (teamId, teamData) => {
+    return await apiCall(`/teams/${teamId}`, {
+      method: 'PUT',
+      body: JSON.stringify(teamData)
+    })
+  },
+  
+  deleteTeam: async (teamId) => {
+    return await apiCall(`/teams/${teamId}`, {
+      method: 'DELETE'
+    })
+  },
+  
+  getTeamMembers: async (teamId) => {
+    return await apiCall(`/teams/${teamId}/members`)
+  },
+  
+  addTeamMember: async (teamId, memberData) => {
+    return await apiCall(`/teams/${teamId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(memberData)
+    })
+  },
+  
+  updateMemberStatus: async (teamId, userName, status) => {
+    return await apiCall(`/teams/${teamId}/members/${userName}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    })
+  },
+  
+  updateMemberRole: async (teamId, userName, role) => {
+    return await apiCall(`/teams/${teamId}/members/${userName}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role })
+    })
+  },
+  
+  removeTeamMember: async (teamId, userName) => {
+    return await apiCall(`/teams/${teamId}/members/${userName}`, {
+      method: 'DELETE'
+    })
+  }
+}
+
+// Activity API
+export const activityAPI = {
+  getActivities: async (filters = {}) => {
+    const params = new URLSearchParams()
+    if (filters.team_id) params.append('team_id', filters.team_id)
+    if (filters.project_id) params.append('project_id', filters.project_id)
+    if (filters.task_id) params.append('task_id', filters.task_id)
+    if (filters.skip) params.append('skip', filters.skip)
+    if (filters.limit) params.append('limit', filters.limit)
+    
+    return await apiCall(`/activities?${params.toString()}`)
+  },
+  
+  createActivity: async (activityData) => {
+    return await apiCall('/activities', {
+      method: 'POST',
+      body: JSON.stringify(activityData)
     })
   }
 }
