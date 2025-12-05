@@ -1,0 +1,44 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - echo Build started on `date`
+      - echo Building the React frontend application...
+      - aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 290008131176.dkr.ecr.us-west-2.amazonaws.com
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the React + Vite application...
+      - |
+        docker build \
+          --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" \
+          --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" \
+          --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" \
+          -t trackerworkflow-frontend .
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image to ECR...
+      - docker tag trackerworkflow-frontend:latest 290008131176.dkr.ecr.us-west-2.amazonaws.com/trackerworkflow-frontend:latest
+      - docker push 290008131176.dkr.ecr.us-west-2.amazonaws.com/trackerworkflow-frontend:latest
+
+artifacts:
+  files:
+    - "**/*"
+  name: trackerworkflow-frontend-$(date +%Y-%m-%d)
+
+cache:
+  paths:
+    - "/root/.npm/**/*"
+    - "/root/.cache/**/*"
+
+env:
+  variables:
+    # These should be set in CodeBuild environment variables
+    # VITE_API_BASE_URL: "https://your-backend-url.com"
+    # VITE_GOOGLE_CLIENT_ID: "your-google-client-id"
+    # VITE_HUGGINGFACE_API_KEY: "your-huggingface-api-key"
