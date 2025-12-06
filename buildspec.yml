@@ -7,6 +7,13 @@ phases:
       - echo Build started on `date`
       - echo Building the React frontend application...
       - aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 290008131176.dkr.ecr.us-west-2.amazonaws.com
+      - echo Logging in to Docker Hub to avoid rate limits...
+      - |
+        if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_PASSWORD" ]; then
+          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+        else
+          echo "⚠️  Docker Hub credentials not set - may hit rate limits. Consider setting DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD in CodeBuild environment variables."
+        fi
 
   build:
     commands:

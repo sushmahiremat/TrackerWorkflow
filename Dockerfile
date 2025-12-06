@@ -1,7 +1,8 @@
 # Multi-stage build for React + Vite frontend
 
 # Stage 1: Build the application
-FROM node:18-alpine AS builder
+# Using ECR Public Gallery to avoid Docker Hub rate limits
+FROM public.ecr.aws/docker/library/node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -36,7 +37,8 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve with nginx
-FROM nginx:alpine
+# Using ECR Public Gallery to avoid Docker Hub rate limits
+FROM public.ecr.aws/docker/library/nginx:alpine
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
