@@ -23,8 +23,8 @@ phases:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image to ECR...
-      - docker tag trackerworkflow-frontend:latest 290008131176.dkr.ecr.us-west-2.amazonaws.com/trackerworkflow-frontend:latest
-      - docker push 290008131176.dkr.ecr.us-west-2.amazonaws.com/trackerworkflow-frontend:latest
+      - docker tag trackerworkflow-frontend:latest 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest
+      - docker push 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest
 
 artifacts:
   files:
