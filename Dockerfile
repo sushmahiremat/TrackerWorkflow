@@ -12,19 +12,27 @@ COPY package.json package-lock.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy application source
-COPY . .
-
 # Build the application
 # Environment variables will be injected at build time
 ARG VITE_API_BASE_URL
 ARG VITE_GOOGLE_CLIENT_ID
 ARG VITE_HUGGINGFACE_API_KEY
 
+# Set environment variables BEFORE copying source
+# This ensures they're available during npm run build
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 ENV VITE_HUGGINGFACE_API_KEY=$VITE_HUGGINGFACE_API_KEY
 
+# Debug: Print environment variables (will show in build logs)
+RUN echo "🔍 VITE_API_BASE_URL=${VITE_API_BASE_URL}"
+RUN echo "🔍 VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}"
+RUN echo "🔍 VITE_HUGGINGFACE_API_KEY=${VITE_HUGGINGFACE_API_KEY}"
+
+# Copy application source (after setting ENV vars)
+COPY . .
+
+# Build the application (Vite will use the ENV vars set above)
 RUN npm run build
 
 # Stage 2: Serve with nginx

@@ -10,7 +10,7 @@ const config = {
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
       ? 'http://localhost:8001' 
-      : 'https://9uwp8ycrdq.us-east-1.awsapprunner.com'), // This will be set via Vercel environment variables
+      : 'https://9uwp8ycrdq.us-east-1.awsapprunner.com'), // Fallback to actual backend URL
   
   // Google OAuth Configuration
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
@@ -29,9 +29,9 @@ const config = {
   CURRENT_DOMAIN: window.location.origin,
 }
 
-// Log configuration in development mode
-if (config.IS_DEV) {
-  console.log('🔧 App Configuration:', config)
-}
+// Always log configuration in production to debug
+console.log('🔧 App Configuration:', config)
+console.log('🔧 API_BASE_URL:', config.API_BASE_URL)
+console.log('🔧 GOOGLE_CLIENT_ID:', config.GOOGLE_CLIENT_ID ? config.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'NOT SET')
 
 export default config

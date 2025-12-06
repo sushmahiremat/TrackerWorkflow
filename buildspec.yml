@@ -12,6 +12,30 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the React + Vite application...
+      - echo "=== Checking Environment Variables ==="
+      - |
+        if [ -z "$VITE_API_BASE_URL" ]; then
+          echo "❌ ERROR: VITE_API_BASE_URL is NOT SET!"
+          echo "Please set it in CodeBuild project settings: Environment → Environment variables"
+          exit 1
+        else
+          echo "✅ VITE_API_BASE_URL is set: ${VITE_API_BASE_URL}"
+        fi
+      - |
+        if [ -z "$VITE_GOOGLE_CLIENT_ID" ]; then
+          echo "❌ ERROR: VITE_GOOGLE_CLIENT_ID is NOT SET!"
+          echo "Please set it in CodeBuild project settings: Environment → Environment variables"
+          exit 1
+        else
+          echo "✅ VITE_GOOGLE_CLIENT_ID is set (first 30 chars): ${VITE_GOOGLE_CLIENT_ID:0:30}..."
+        fi
+      - |
+        if [ -z "$VITE_HUGGINGFACE_API_KEY" ]; then
+          echo "⚠️  WARNING: VITE_HUGGINGFACE_API_KEY is NOT SET (optional)"
+        else
+          echo "✅ VITE_HUGGINGFACE_API_KEY is set (first 10 chars): ${VITE_HUGGINGFACE_API_KEY:0:10}..."
+        fi
+      - echo "=== Starting Docker Build ==="
       - |
         docker build \
           --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" \
