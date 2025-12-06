@@ -10,7 +10,7 @@ const config = {
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
       ? 'http://localhost:8001' 
-      : 'https://your-backend-domain.com'), // This will be set via Vercel environment variables
+      : 'https://9uwp8ycrdq.us-east-1.awsapprunner.com'), // This will be set via Vercel environment variables
   
   // Google OAuth Configuration
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',

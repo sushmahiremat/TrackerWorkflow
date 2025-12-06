@@ -3,6 +3,7 @@
 ## Problems Identified
 
 1. **"Failed to fetch" error on login:**
+
    - Frontend is trying to connect to `https://your-backend-domain.com` (placeholder)
    - Should connect to: `https://9uwp8ycrdq.us-east-1.awsapprunner.com`
 
@@ -22,29 +23,33 @@
 ### Step 2: Add Environment Variables
 
 1. **Go to Environment Section:**
+
    - Click "Environment" in left sidebar
    - Scroll down to "Environment variables"
 
 2. **Add These Variables:**
-   
+
    Click "Add environment variable" for each:
 
    **Variable 1:**
+
    - **Name:** `VITE_API_BASE_URL`
    - **Value:** `https://9uwp8ycrdq.us-east-1.awsapprunner.com`
    - **Type:** Plaintext
 
    **Variable 2:**
+
    - **Name:** `VITE_GOOGLE_CLIENT_ID`
    - **Value:** `129237008005-gi3c2jogmsb5kuuiag664305f7vgh30c.apps.googleusercontent.com`
    - **Type:** Plaintext
 
    **Variable 3:**
+
    - **Name:** `VITE_HUGGINGFACE_API_KEY`
    - **Value:** `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`
    - **Type:** Plaintext
 
-3. **Save Changes:**
+3. **Save Changes:**c
    - Click "Update environment"
    - Or click "Save" at the bottom
 
@@ -58,6 +63,7 @@ After setting environment variables:
 4. **Wait for build to complete** (5-10 minutes)
 
 The build will:
+
 - Use the environment variables during Docker build
 - Bake them into the frontend application
 - Push new image to ECR
@@ -76,10 +82,12 @@ After CodeBuild completes:
 After frontend is deployed:
 
 1. **Get your frontend App Runner URL:**
+
    - App Runner service: `service_track_ui`
    - Copy the default domain: `https://y55dfkjshm.us-west-2.awsapprunner.com`
 
 2. **Update Google Cloud Console:**
+
    - Go to: https://console.cloud.google.com/
    - APIs & Services → Credentials
    - Edit your OAuth 2.0 Client ID
@@ -98,10 +106,12 @@ After frontend is deployed:
 After rebuilding:
 
 1. **Open hosted frontend:**
+
    - Go to: `https://y55dfkjshm.us-west-2.awsapprunner.com`
    - Open browser console (F12)
 
 2. **Check console logs:**
+
    - Should see: `🔍 VITE_API_BASE_URL: https://9uwp8ycrdq.us-east-1.awsapprunner.com`
    - Should see: `🔍 VITE_GOOGLE_CLIENT_ID: 129237008005-gi3c2jogmsb5kuuiag664305f7vgh30c...`
    - Should see: `✅ Google Sign-In initialized successfully`
@@ -127,16 +137,19 @@ After rebuilding:
 ## Why This Happens
 
 ### Issue 1: Wrong Backend URL
+
 - **Root cause:** `VITE_API_BASE_URL` not set during build
 - **Result:** Frontend uses placeholder `https://your-backend-domain.com`
 - **Fix:** Set in CodeBuild environment variables
 
 ### Issue 2: Google Login Not Showing
+
 - **Root cause:** `VITE_GOOGLE_CLIENT_ID` not set during build
 - **Result:** GoogleLogin component can't initialize (line 36-39 in GoogleLogin.jsx)
 - **Fix:** Set in CodeBuild environment variables
 
 ### Why Localhost Works
+
 - Localhost uses `http://localhost:8001` (hardcoded fallback in config.js line 12)
 - Localhost might have `.env` file with variables
 - Hosted version needs variables baked into Docker image at build time
@@ -144,8 +157,8 @@ After rebuilding:
 ## Expected Result
 
 After fixing:
+
 - ✅ Login works on hosted frontend
 - ✅ Google login button visible
 - ✅ Both connect to correct backend URL
 - ✅ All features work as expected
-
