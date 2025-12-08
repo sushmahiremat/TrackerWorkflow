@@ -16,7 +16,7 @@ phases:
         fi
       - echo Checking CodeBuild architecture...
       - uname -m
-      - echo "Note: If this shows 'aarch64' or 'arm64', change CodeBuild compute type to BUILD_GENERAL1_SMALL (x86_64)"
+      - echo Note: If uname shows aarch64 or arm64, change CodeBuild compute type to BUILD_GENERAL1_SMALL
 
   build:
     commands:
