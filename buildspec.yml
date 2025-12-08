@@ -5,26 +5,21 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - echo Build started on `date`
-      - echo Building the React frontend application...
+      - echo Building the Docker image...
       - aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 290008131176.dkr.ecr.us-west-2.amazonaws.com
 
   build:
     commands:
       - echo Build started on `date`
-      - echo Building the React + Vite application for linux/amd64...
-      - mkdir -p ~/.docker/cli-plugins
-      - ARCH=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/amd64/')
-      - curl -sSL "https://github.com/docker/buildx/releases/download/v0.12.1/buildx-v0.12.1.linux-${ARCH}" -o ~/.docker/cli-plugins/docker-buildx
-      - chmod +x ~/.docker/cli-plugins/docker-buildx
-      - docker buildx version
-      - docker buildx create --use --name multiplatform --driver docker-container
-      - docker buildx inspect --bootstrap
-      - docker buildx build --platform linux/amd64 --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" -t 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest --push .
+      - echo Building the React application...
+      - docker build --no-cache --build-arg VITE_API_BASE_URL=$VITE_API_BASE_URL --build-arg VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID --build-arg VITE_HUGGINGFACE_API_KEY=$VITE_HUGGINGFACE_API_KEY -t trackerworkflow-frontend .
 
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Image already pushed to ECR during build phase
+      - echo Pushing the Docker image to ECR...
+      - docker tag trackerworkflow-frontend:latest 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest
+      - docker push 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest
 
 artifacts:
   files:
@@ -34,4 +29,4 @@ artifacts:
 cache:
   paths:
     - "/root/.npm/**/*"
-    - "/root/.cache/**/*"
+    - "node_modules/**/*"
