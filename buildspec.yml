@@ -11,15 +11,16 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - echo Building the React + Vite application...
-      - docker build --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" -t trackerworkflow-frontend .
+      - echo Building the React + Vite application for linux/amd64...
+      - docker buildx version
+      - docker buildx create --use --name multiplatform --driver docker-container || docker buildx use multiplatform || true
+      - docker buildx inspect --bootstrap
+      - docker buildx build --platform linux/amd64 --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" -t 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest --push .
 
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing the Docker image to ECR...
-      - docker tag trackerworkflow-frontend:latest 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest
-      - docker push 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest
+      - echo Image already pushed to ECR during build phase
 
 artifacts:
   files:
