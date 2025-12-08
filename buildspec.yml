@@ -12,8 +12,12 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the React + Vite application for linux/amd64...
+      - mkdir -p ~/.docker/cli-plugins
+      - ARCH=$(uname -m | sed 's/aarch64/arm64/;s/x86_64/amd64/')
+      - curl -sSL "https://github.com/docker/buildx/releases/download/v0.12.1/buildx-v0.12.1.linux-${ARCH}" -o ~/.docker/cli-plugins/docker-buildx
+      - chmod +x ~/.docker/cli-plugins/docker-buildx
       - docker buildx version
-      - docker buildx create --use --name multiplatform --driver docker-container || docker buildx use multiplatform || true
+      - docker buildx create --use --name multiplatform --driver docker-container
       - docker buildx inspect --bootstrap
       - docker buildx build --platform linux/amd64 --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" -t 290008131176.dkr.ecr.us-west-2.amazonaws.com/tracker_ui:latest --push .
 
