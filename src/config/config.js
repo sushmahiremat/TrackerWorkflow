@@ -10,7 +10,7 @@ const config = {
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
       ? 'http://localhost:8001' 
-      : 'https://9uwp8ycrdq.us-east-1.awsapprunner.com'), // Fallback to actual backend URL
+      : 'https://9cqn6rispm.us-west-2.awsapprunner.com '), // Fallback to actual backend URL
   
   // Google OAuth Configuration
   GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',

@@ -69,6 +69,6 @@ cache:
 # Environment variables should be set in CodeBuild project settings, not here
 # Go to CodeBuild Console → Your Project → Edit → Environment → Environment variables
 # Add these variables there:
-#   VITE_API_BASE_URL=https://9uwp8ycrdq.us-east-1.awsapprunner.com
+#   VITE_API_BASE_URL=https://9cqn6rispm.us-west-2.awsapprunner.com
 #   VITE_GOOGLE_CLIENT_ID=129237008005-gi3c2jogmsb5kuuiag664305f7vgh30c.apps.googleusercontent.com
 #   VITE_HUGGINGFACE_API_KEY=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
