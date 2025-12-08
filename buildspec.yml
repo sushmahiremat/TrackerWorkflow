@@ -7,52 +7,12 @@ phases:
       - echo Build started on `date`
       - echo Building the React frontend application...
       - aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 290008131176.dkr.ecr.us-west-2.amazonaws.com
-      - echo Logging in to Docker Hub to avoid rate limits...
-      - |
-        if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_PASSWORD" ]; then
-          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
-        else
-          echo "⚠️  Docker Hub credentials not set - may hit rate limits. Consider setting DOCKERHUB_USERNAME and DOCKERHUB_PASSWORD in CodeBuild environment variables."
-        fi
-      - echo Checking CodeBuild architecture...
-      - uname -m
 
   build:
     commands:
       - echo Build started on `date`
       - echo Building the React + Vite application...
-      - echo "=== Checking Environment Variables ==="
-      - |
-        if [ -z "$VITE_API_BASE_URL" ]; then
-          echo "❌ ERROR: VITE_API_BASE_URL is NOT SET!"
-          echo "Please set it in CodeBuild project settings: Environment → Environment variables"
-          exit 1
-        else
-          echo "✅ VITE_API_BASE_URL is set: ${VITE_API_BASE_URL}"
-        fi
-      - |
-        if [ -z "$VITE_GOOGLE_CLIENT_ID" ]; then
-          echo "❌ ERROR: VITE_GOOGLE_CLIENT_ID is NOT SET!"
-          echo "Please set it in CodeBuild project settings: Environment → Environment variables"
-          exit 1
-        else
-          echo "✅ VITE_GOOGLE_CLIENT_ID is set (first 30 chars): ${VITE_GOOGLE_CLIENT_ID:0:30}..."
-        fi
-      - |
-        if [ -z "$VITE_HUGGINGFACE_API_KEY" ]; then
-          echo "⚠️  WARNING: VITE_HUGGINGFACE_API_KEY is NOT SET (optional)"
-        else
-          echo "✅ VITE_HUGGINGFACE_API_KEY is set (first 10 chars): ${VITE_HUGGINGFACE_API_KEY:0:10}..."
-        fi
-      - echo "=== Starting Docker Build ==="
-      - echo "Building Docker image for linux/amd64 platform..."
-      - |
-        docker build \
-          --platform linux/amd64 \
-          --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" \
-          --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" \
-          --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" \
-          -t trackerworkflow-frontend .
+      - docker build --build-arg VITE_API_BASE_URL="${VITE_API_BASE_URL}" --build-arg VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID}" --build-arg VITE_HUGGINGFACE_API_KEY="${VITE_HUGGINGFACE_API_KEY}" -t trackerworkflow-frontend .
 
   post_build:
     commands:
@@ -70,9 +30,3 @@ cache:
   paths:
     - "/root/.npm/**/*"
     - "/root/.cache/**/*"
-# Environment variables should be set in CodeBuild project settings, not here
-# Go to CodeBuild Console → Your Project → Edit → Environment → Environment variables
-# Add these variables there:
-#   VITE_API_BASE_URL=https://9cqn6rispm.us-west-2.awsapprunner.com
-#   VITE_GOOGLE_CLIENT_ID=129237008005-gi3c2jogmsb5kuuiag664305f7vgh30c.apps.googleusercontent.com
-#   VITE_HUGGINGFACE_API_KEY=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
