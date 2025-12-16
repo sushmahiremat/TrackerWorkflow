@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './components/Login.jsx'
+import GoogleCallback from './components/GoogleCallback.jsx'
 import Dashboard from './components/Dashboard.jsx'
 import KanbanBoard from './components/KanbanBoard.jsx'
 import Recent from './components/Recent.jsx'
@@ -51,6 +52,10 @@ function AppRoutes() {
       <Route 
         path="/login" 
         element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} 
+      />
+      <Route 
+        path="/auth/google/callback" 
+        element={<GoogleCallback />} 
       />
       <Route 
         path="/dashboard" 
