@@ -1,12 +1,31 @@
 // API configuration and service functions
 import config from '../config/config.js'
 
-const API_BASE_URL = config.API_BASE_URL
+let API_BASE_URL = config.API_BASE_URL
+
+// Runtime safety check: Never use frontend URL as API URL
+const currentOrigin = window.location.origin
+if (API_BASE_URL === currentOrigin || API_BASE_URL.includes('y55dfkjshm')) {
+  console.error('🚨 CRITICAL: API_BASE_URL matches frontend URL!')
+  console.error('Frontend URL:', currentOrigin)
+  console.error('API_BASE_URL:', API_BASE_URL)
+  // Auto-correct to backend URL
+  API_BASE_URL = 'https://9cqn6rispm.us-west-2.awsapprunner.com'
+  console.warn('🔧 AUTO-CORRECTED API_BASE_URL to:', API_BASE_URL)
+}
 
 // Helper function for API calls
 export const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`
   console.log('🌐 API Call:', { url, method: options.method || 'GET', endpoint })
+  
+  // Final safety check before making request
+  if (url.includes('y55dfkjshm') && endpoint !== '/') {
+    console.error('🚨 BLOCKED: Attempted to call API on frontend URL!')
+    console.error('URL:', url)
+    console.error('This should never happen. Check API_BASE_URL configuration.')
+    throw new Error('API URL incorrectly configured - cannot use frontend URL for API calls')
+  }
   
   const config = {
     credentials: 'include', // Include credentials for CORS

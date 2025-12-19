@@ -7,14 +7,21 @@ console.log('🔍 VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 // Determine API Base URL
 const getApiBaseUrl = () => {
+  const currentOrigin = window.location.origin
+  const frontendUrl = 'https://y55dfkjshm.us-west-2.awsapprunner.com'
+  const backendUrl = 'https://9cqn6rispm.us-west-2.awsapprunner.com'
+  
   // Priority 1: Explicitly set environment variable
   if (import.meta.env.VITE_API_BASE_URL) {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL.trim()
-    // Safety check: Never use frontend URL as API URL
-    if (apiUrl.includes('y55dfkjshm')) {
-      console.error('❌ ERROR: VITE_API_BASE_URL cannot be the frontend URL!')
-      console.error('Frontend URL:', window.location.origin)
-      console.error('Backend URL should be: https://9cqn6rispm.us-west-2.awsapprunner.com')
+    let apiUrl = import.meta.env.VITE_API_BASE_URL.trim()
+    
+    // CRITICAL FIX: Auto-correct if API URL is set to frontend URL
+    if (apiUrl.includes('y55dfkjshm') || apiUrl === currentOrigin || apiUrl === frontendUrl) {
+      console.error('❌ ERROR: VITE_API_BASE_URL is set to frontend URL!')
+      console.error('Detected frontend URL:', apiUrl)
+      console.error('Current origin:', currentOrigin)
+      console.warn('🔧 AUTO-CORRECTING: Using backend URL instead')
+      apiUrl = backendUrl
     }
     return apiUrl
   }
@@ -27,7 +34,6 @@ const getApiBaseUrl = () => {
   // Priority 3: Production fallback - BACKEND URL (not frontend!)
   // Frontend: y55dfkjshm.us-west-2.awsapprunner.com
   // Backend: 9cqn6rispm.us-west-2.awsapprunner.com
-  const backendUrl = 'https://9cqn6rispm.us-west-2.awsapprunner.com'
   console.warn('⚠️ VITE_API_BASE_URL not set, using fallback backend URL:', backendUrl)
   return backendUrl
 }
