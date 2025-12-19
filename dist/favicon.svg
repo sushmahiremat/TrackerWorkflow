@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Blue square background -->
+  <rect width="32" height="32" rx="6" fill="#4F46E5"/>
+  
+  <!-- White arrow pointing right -->
+  <path d="M8 8 L20 16 L8 24" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Optional: Add a subtle inner border -->
+  <rect x="2" y="2" width="28" height="28" rx="4" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+</svg>
