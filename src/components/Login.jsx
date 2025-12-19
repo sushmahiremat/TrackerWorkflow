@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { LogIn, User, Lock, X } from 'lucide-react'
 import GoogleLogin from './GoogleLogin.jsx'
@@ -7,8 +8,31 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   
-  const { login, error, clearError } = useAuth()
+  const { login, googleLogin, error, clearError } = useAuth()
+
+  // Handle Google OAuth redirect callback if credential is in URL
+  useEffect(() => {
+    const credential = searchParams.get('credential')
+    if (credential) {
+      // Google redirected back with credential, process it
+      const handleGoogleCallback = async () => {
+        try {
+          console.log('Processing Google callback on login page')
+          const result = await googleLogin(credential)
+          console.log('Google login successful:', result)
+          // Redirect to dashboard on success
+          navigate('/dashboard', { replace: true })
+        } catch (error) {
+          console.error('Google callback error:', error)
+          // Error will be set in context and displayed
+        }
+      }
+      handleGoogleCallback()
+    }
+  }, [searchParams, googleLogin, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
