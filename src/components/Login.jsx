@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
+import { tokenService } from '../services/api.js'
 import { LogIn, User, Lock, X } from 'lucide-react'
 import GoogleLogin from './GoogleLogin.jsx'
 
@@ -11,28 +12,36 @@ const Login = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   
-  const { login, googleLogin, error, clearError } = useAuth()
+  const { login, error, clearError, loadCurrentUser } = useAuth()
 
-  // Handle Google OAuth redirect callback if credential is in URL
+  // Handle OAuth callback - backend redirects here with token
   useEffect(() => {
-    const credential = searchParams.get('credential')
-    if (credential) {
-      // Google redirected back with credential, process it
-      const handleGoogleCallback = async () => {
-        try {
-          console.log('Processing Google callback on login page')
-          const result = await googleLogin(credential)
-          console.log('Google login successful:', result)
-          // Redirect to dashboard on success
-          navigate('/dashboard', { replace: true })
-        } catch (error) {
-          console.error('Google callback error:', error)
-          // Error will be set in context and displayed
-        }
-      }
-      handleGoogleCallback()
+    const token = searchParams.get('token')
+    const errorParam = searchParams.get('error')
+    
+    if (errorParam) {
+      console.error('OAuth error:', errorParam)
+      // Error will be displayed by the error state
+      // Clean up URL
+      navigate('/login', { replace: true })
+      return
     }
-  }, [searchParams, googleLogin, navigate])
+    
+    if (token) {
+      console.log('✅ OAuth token received from backend callback')
+      // Store token
+      tokenService.setToken(token)
+      // Load user data
+      loadCurrentUser(token).then(() => {
+        // Redirect to dashboard
+        navigate('/dashboard', { replace: true })
+      }).catch((err) => {
+        console.error('Failed to load user after OAuth:', err)
+        // Clean up URL
+        navigate('/login', { replace: true })
+      })
+    }
+  }, [searchParams, navigate, loadCurrentUser])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -52,11 +61,6 @@ const Login = () => {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleGoogleSuccess = () => {
-    // Google login successful, user will be redirected
-    console.log('Google login successful')
   }
 
   const handleGoogleError = (errorMessage) => {
@@ -176,7 +180,6 @@ const Login = () => {
 
           {/* Google OAuth Login */}
           <GoogleLogin 
-            onSuccess={handleGoogleSuccess}
             onError={handleGoogleError}
           />
           

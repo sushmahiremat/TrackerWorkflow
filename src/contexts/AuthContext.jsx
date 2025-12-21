@@ -130,7 +130,8 @@ export const AuthProvider = ({ children }) => {
     googleLogin,
     register,
     logout,
-    clearError
+    clearError,
+    loadCurrentUser
   }
 
   return (
